@@ -98,7 +98,7 @@ for(i = 1; i < nverts - 1; i ++)
 	{
 	    if(final_cut[to[e]] != 0)
 	    {
-	    final_degree ++;
+	    	final_degree ++;
 	    }
 	}
     }
