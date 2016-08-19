@@ -16,9 +16,9 @@ int main(int argc, char* argv[])
 	return EXIT_FAILURE;
     }
 
-    //read the content from the input file to a stringstream
+    /*read the content from the input file to a stringstream*/
     fseek(rptr, 0, SEEK_END);
-    int fsize;
+    int64_t fsize;
     fsize = ftell(rptr);
     char *read_file = (char *)malloc(sizeof(char) * fsize);
     if(read_file == NULL)

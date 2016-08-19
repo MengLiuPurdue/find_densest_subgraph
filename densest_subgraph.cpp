@@ -24,18 +24,16 @@
 
 using namespace std;
 
-int nverts, nedges, src, dest;
-double g;
 
-void init_edges(double (*edges_info)[3], double *degree, int64_t n, int64_t m);
-void free_malloc();
-
+void init_edges(double (*edges_info)[3], double *degree, int64_t n, int64_t m, int64_t src, int64_t dest, double g);
 
 double densest_subgraph(int64_t n, int64_t m, int64_t *ei, int64_t *ej, double *w, int64_t *output, size_t *outputlen)
 {
+    int64_t nverts, nedges, src, dest;
+    double g;
     nverts = n + 2;
     nedges = m + 2 * n;
-    int i;
+    int64_t i;
     double (*edges_info)[3] = (double (*)[3])malloc(sizeof(double) * nedges * 3);
     if(edges_info == NULL)
     {
@@ -48,90 +46,80 @@ double densest_subgraph(int64_t n, int64_t m, int64_t *ei, int64_t *ej, double *
 	edges_info[i][0] = ei[i];
 	edges_info[i][1] = ej[i];
 	edges_info[i][2] = w[i];
-	degree[(int)edges_info[i][0]] += edges_info[i][2];
+	degree[(int64_t)edges_info[i][0]] += edges_info[i][2];
 	edges_info[i][0] ++;
 	edges_info[i][1] ++;
     }
-	
-//define some necessary variables
-double final_degree = 0;//the degree of the densest subgraph
-double L = 0;//lower bound of Andrew Goldberg's algorithm
-double U = m / 2;//upper bound of Andrew Goldberg's algorithm
-int *final_cut = (int *)malloc(sizeof(int) * nverts);
-//Andrew Goldberg's algorithm
-int iter = 0;
-while(n * (n - 1) * (U - L) >= 1)
-{
-//cout << n * (n - 1) * (U - L) << endl;
-    iter ++;
-    g = (U + L) / 2;
-    src = 0;
-    dest = nverts - 1;
-    init_edges(edges_info, degree, n, m);
-    free_malloc();
-    max_flow(edges_info);
-    if(accumulate(cut, cut + nverts, 0) == 1)
+
+    double final_degree = 0;//the degree of the densest subgraph
+    double L = 0;//lower bound of Andrew Goldberg's algorithm
+    double U = m / 2;//upper bound of Andrew Goldberg's algorithm
+    int64_t *final_cut = (int64_t *)malloc(sizeof(int64_t) * nverts);
+    
+    int64_t iter = 0;
+
+    /*malloc enough space to store data used to calculate max flow*/
+    int64_t *Q = (int64_t *)malloc(sizeof(int64_t) * nverts);
+    int64_t *fin = (int64_t *)malloc(sizeof(int64_t) * nverts);
+    int64_t *pro = (int64_t *)malloc(sizeof(int64_t) * nverts);
+    int64_t *another_pro = (int64_t *)malloc(sizeof(int64_t) * nverts);
+    int64_t *pro3 = (int64_t *)malloc(sizeof(int64_t) * nverts);
+    int64_t *dist = (int64_t *)malloc(sizeof(int64_t) * nverts);
+    double *flow = (double *)malloc(sizeof(double) * 2 * nedges);
+    double *cap = (double *)malloc(sizeof(double) * 2 * nedges);
+    int64_t *next = (int64_t *)malloc(sizeof(int64_t) * 2 * nedges);
+    int64_t *to = (int64_t *)malloc(sizeof(int64_t) * 2 * nedges);
+    int64_t *cut = (int64_t *)malloc(sizeof(int64_t) * nverts);
+
+    /*Andrew Goldberg's algorithm*/
+    while(n * (n - 1) * (U - L) >= 1)
     {
-	U = g;
-    }
-    else
-    {
-	L = g;
-	for(i = 0; i < nverts; i ++)
+	iter ++;
+	g = (U + L) / 2;
+	src = 0;
+	dest = nverts - 1;
+	init_edges(edges_info, degree, n, m, src, dest, g);
+	max_flow(edges_info, nverts, nedges, src, dest, Q, fin, pro, dist, next, to, cut, another_pro, pro3, flow, cap);
+	if(accumulate(cut, cut + nverts, 0) == 1)
 	{
-	    final_cut[i] = cut[i];
+	    U = g;
 	}
-    }
-}
-
-final_cut[0] = 0;
-final_cut[nverts - 1] = 0;
-
-//retrieve the densest subgraph from the final_cut
-int num = 0;
-for(i = 1; i < nverts - 1; i ++)
-{
-    if(final_cut[i] != 0)
-    {
-	output[num ++] = i - 1;
-	for(int &e = pro3[i]; e >= 0; e = next[e])
+	else
 	{
-	    if(final_cut[to[e]] != 0)
+	    L = g;
+	    for(i = 0; i < nverts; i ++)
 	    {
-	    	final_degree ++;
+		final_cut[i] = cut[i];
 	    }
 	}
     }
-}
-final_degree /= (2 * num);
-*outputlen = num;
 
-free(final_cut);
-free(degree);
-free(edges_info);
-return final_degree;
-}
+    final_cut[0] = 0;
+    final_cut[nverts - 1] = 0;
 
-
-void init_edges(double (*edges_info)[3], double *degree, int64_t n, int64_t m)
-{
-    long i;
-    for(i = m; i < m + n; i ++)
+    /*retrieve the densest subgraph from the final_cut*/
+    int64_t num = 0;
+    for(i = 1; i < nverts - 1; i ++)
     {
-	edges_info[i][0] = src;
-	edges_info[i][1] = i - m + 1;
-	edges_info[i][2] = m / 2;
+	if(final_cut[i] != 0)
+	{
+	    output[num ++] = i - 1;
+	    for(int64_t &e = pro3[i]; e >= 0; e = next[e])
+	    {
+		if(final_cut[to[e]] != 0)
+		{
+		    final_degree ++;
+		}
+	    }
+	}
     }
-    for(i = n + m; i < m + 2 * n; i ++)
-    {
-	edges_info[i][0] = i - m - n + 1;
-	edges_info[i][1] = dest;
-	edges_info[i][2] = m / 2 + 2 * g - degree[i - m - n];
-    }
-}
+    final_degree /= (2 * num);
+    *outputlen = num;
 
-void free_malloc()
-{
+    /*free space*/
+    free(final_cut);
+    free(degree);
+    free(edges_info);
     free(Q);
     free(fin);
     free(pro);
@@ -143,4 +131,25 @@ void free_malloc()
     free(next);
     free(to);
     free(cut);
+    return final_degree;
+}
+
+
+void init_edges(double (*edges_info)[3], double *degree, int64_t n, int64_t m, int64_t src, int64_t dest, double g)
+{
+    long i;
+    /*add edge from src to every other vertex*/
+    for(i = m; i < m + n; i ++)
+    {
+	edges_info[i][0] = src;
+	edges_info[i][1] = i - m + 1;
+	edges_info[i][2] = m / 2;
+    }
+    /*add edge from every other vertex to src*/
+    for(i = n + m; i < m + 2 * n; i ++)
+    {
+	edges_info[i][0] = i - m - n + 1;
+	edges_info[i][1] = dest;
+	edges_info[i][2] = m / 2 + 2 * g - degree[i - m - n];
+    }
 }
