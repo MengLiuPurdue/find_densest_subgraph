@@ -1,0 +1,5 @@
+*.o
+find_densest_subgraph
+lib*.dylib
+lib*.so
+lib*.dll
