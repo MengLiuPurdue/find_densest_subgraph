@@ -1,3 +1,17 @@
+
+
+#include <iostream>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <sstream>
+#include <numeric>
+#include "def.h"
+
+using namespace std;    
+
+void init_edges(double (*edges_info)[3], double *degree, int64_t n, int64_t m, int64_t src, int64_t dest, double g);
+
 /**
  * Compute the densest subgraph given a graph in edge-list format.
  *
@@ -13,20 +27,6 @@
  * @param [in/out] the valid length of the output list and the length of the set of output used. 
  * @return the density of the densest subgraph in total_edge_weight/number of vertices
  */
-
-#include <iostream>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <sstream>
-#include <numeric>
-#include "def.h"
-
-using namespace std;
-
-
-void init_edges(double (*edges_info)[3], double *degree, int64_t n, int64_t m, int64_t src, int64_t dest, double g);
-
 double densest_subgraph(int64_t n, int64_t m, int64_t *ei, int64_t *ej, double *w, int64_t *output, size_t *outputlen)
 {
     int64_t nverts, nedges, src, dest;

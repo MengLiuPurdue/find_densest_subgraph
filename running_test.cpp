@@ -5,7 +5,7 @@
 
 using namespace std;
 
-double densest_subgraph(int64_t n, int64_t m, int64_t *ei, int64_t *ej, double *w, int64_t *output, size_t *outputlen);
+#include "def.h"
 
 int main(int argc, char* argv[])
 {
