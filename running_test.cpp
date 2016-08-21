@@ -12,14 +12,15 @@ int main(int argc, char* argv[])
 {
     FILE *rptr = fopen(argv[1], "r");
     if(rptr == NULL) {
-        fprintf(stderr, "Invalid input file!\n");
+        fprintf(stderr, 
+           "The file %s couldn't be opened for reading (Does it exist?)!\n", 
+           argv[1]);
         return EXIT_FAILURE;
     }
 
     /*read the content from the input file to a stringstream*/
     fseek(rptr, 0, SEEK_END);
-    int64_t fsize;
-    fsize = ftell(rptr);
+    size_t fsize = ftell(rptr);
     char *read_file = (char *)malloc(sizeof(char) * fsize);
     if(read_file == NULL) {
         fprintf(stderr, "malloc failing!\n");
@@ -27,8 +28,11 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
     fseek(rptr, 0, SEEK_SET);
-    fread(read_file, sizeof(char), fsize, rptr);
-    
+    size_t nread = fread(read_file, sizeof(char), fsize, rptr);
+    if (nread != fsize) {
+        fprintf(stderr, "read failed on %s\n", argv[1]);
+        return EXIT_FAILURE;
+    }
     stringstream ss;
     ss << read_file;
     free(read_file);
@@ -65,8 +69,8 @@ int main(int argc, char* argv[])
     ret = densest_subgraph(n, m, ei, ej, w, output, &outputlen);
     cout << ret << endl;
     cout << outputlen << endl;
-    for (i = 0; i < outputlen; ++i) {
-        cout << output[i] << endl;
+    for (size_t j = 0; j < outputlen; ++j) {
+        cout << output[j] << endl;
     }
     
     return 0;

@@ -12,7 +12,7 @@ TARGET := find_densest_subgraph
 LIB := libdensest_subgraph.$(SHAREDLIB_EXT)
 
 CC := $(CXX)
-CXXFLAGS := -Wall -O3 -Wshadow -Werror
+CXXFLAGS := -Wall -O3 -Wshadow -Werror -fPIC
 
 SRCS = densest_subgraph.cpp maxflow.cpp running_test.cpp
 OBJS = $(SRCS:%.cpp=%.o)
