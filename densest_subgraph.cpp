@@ -108,7 +108,7 @@ double densest_subgraph(int64_t n, int64_t m, int64_t *ei, int64_t *ej, double *
 	    {
 		if(final_cut[to[e]] != 0)
 		{
-		    final_degree ++;
+		    final_degree += cap[e];
 		}
 	    }
 	}
