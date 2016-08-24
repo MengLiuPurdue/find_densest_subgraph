@@ -158,23 +158,6 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    int tmp1 = 2345;
-    int tmp2 = 6789;
-    char edge[128];
-    fill(edge, edge + 128, 0);
-    string converted_edge;
-    i = 0;
-    while(tmp1 != 0)
-    {
-        edge[i ++] = tmp1 % 10;
-        tmp1 /= 10;
-    }
-    i = 0;
-    while(tmp2 != 0)
-    {
-        edge[64 + (i ++)] = tmp2 % 10;
-        tmp2 /= 10;
-    }
     unordered_set<string> *edges_set = new unordered_set<string>;
     // TODO check for repeated edges
     if(check_repeated(ei, ej, m, edges_set))
