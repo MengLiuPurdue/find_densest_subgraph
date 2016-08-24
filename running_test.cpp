@@ -3,235 +3,208 @@
 #include <stdio.h>
 #include <sstream>
 #include <inttypes.h>
-#include <fstream>
+#include <algorithm>
+#include <unordered_set>
 
 using namespace std;
 
 #include "def.h"
 
-class HashEntry {
-    private:
-        long from;
-        long to;
+#define PASS 0
+#define FAIL 1
+
+class Edge
+{
     public:
-        HashEntry(long from_val, long to_val) {
-            this->from = from_val;
-            this->to = to_val;
-        }
-
-        long getFrom() {
-            return from;
-        }
-
-        long getTo() {
-            return to;
-        }
+        int64_t from;
+        int64_t to;
 };
 
-class HashMap {
-    private:
-        HashEntry **table;
-        int64_t TABLE_SIZE;
-    public:
-        HashMap(int64_t size) {
-            this->TABLE_SIZE = size;
-            table = new HashEntry*[size];
-            for (long i = 0; i < size; i++)
-                table[i] = NULL;
+string convert_edge(int64_t from, int64_t to)
+{
+    char temp[51];
+    fill(temp, temp + 50, '0');
+    int i = 0;
+    while(from != 0 || to != 0)
+    {
+        temp[i] = char(from % 10);
+        temp[i + 25] = char(to % 10);
+        i ++;
+        from /= 10;
+        to /= 10;
+    }
+    temp[50] = 0;
+    string converted(temp);
+    return converted;
+}
+
+int check_symmetric(int64_t *ei, int64_t *ej, int64_t m, unordered_set<string> *edges_set)
+{
+    int64_t i;
+    for(i = 0; i < m; i ++)
+    {
+        if(edges_set->find(convert_edge(ej[i], ei[i])) == edges_set->end())
+        {
+            fprintf(stderr, "Symmetric Error!\n");
+            return FAIL;
         }
+    }
+    return PASS;
+}
 
-
-
-        long get(long from, long to) {
-            long hash = (from % TABLE_SIZE);
-            while (table[hash] != NULL && (table[hash]->getFrom() != from || table[hash]->getTo() != to))
-                hash = (hash + 1) % TABLE_SIZE;
-            if (table[hash] == NULL)
-                return -1;
-            else
-                return table[hash]->getFrom();
+int check_repeated(int64_t *ei, int64_t *ej, int64_t m, unordered_set<string> *edges_set)
+{
+    int64_t i;
+    for(i = 0; i < m; i ++)
+    {
+        if(edges_set->count(convert_edge(ei[i], ej[i])))
+        {
+            fprintf(stderr, "Repeated Edge in Line %ld!\n", i + 2);
+            return FAIL;
         }
+        edges_set->insert(convert_edge(ei[i], ej[i]));
+    }
+    return PASS;
+}
 
-        int put(long from, long to) {
-            long hash = (from % TABLE_SIZE);
-            while (table[hash] != NULL && (table[hash]->getFrom() != from || table[hash]->getTo() != to))
-                hash = (hash + 1) % TABLE_SIZE;
-            if (table[hash] != NULL)
-                return 1;
-            table[hash] = new HashEntry(from, to);
-            return 0;
-        } 
-
-
-
-        ~HashMap() {
-            for (long i = 0; i < TABLE_SIZE; i++)
-                if (table[i] != NULL)
-                    delete table[i];
-            delete[] table;
+int check_diagonal(int64_t *ei, int64_t *ej, int64_t m)
+{
+    int64_t i;
+    for(i = 0; i < m; i ++)
+    {
+        if(ei[i] == ej[i])
+        {
+            fprintf(stderr, "Diagonal Edge in Line %ld!", i + 2);
+            return FAIL;
         }
-};
+    }
+    return PASS;
+}
 
 
 int main(int argc, char* argv[])
 {
-    ifstream rptr;
-    rptr.open(argv[1], ifstream::in);
-    if(!rptr.is_open()) {
+    FILE *rptr = fopen(argv[1], "r");
+    if(rptr == NULL) {
         fprintf(stderr, 
                 "The file %s couldn't be opened for reading (Does it exist?)!\n", 
                 argv[1]);
         return EXIT_FAILURE;
     }
 
-    /*read the content from the input file through stringstream*/
-
-    string newline;
+    /*read the content from the input file to a stringstream*/
+    fseek(rptr, 0, SEEK_END);
+    size_t fsize = ftell(rptr);
+    char *read_file = (char *)malloc(sizeof(char) * fsize);
+    if(read_file == NULL) {
+        fprintf(stderr, "malloc failing!\n");
+        fclose(rptr);
+        return EXIT_FAILURE;
+    }
+    fseek(rptr, 0, SEEK_SET);
+    size_t nread = fread(read_file, sizeof(char), fsize, rptr);
+    if (nread != fsize) {
+        fprintf(stderr, "read failed on %s\n", argv[1]);
+        return EXIT_FAILURE;
+    }
     stringstream ss;
-    double temp;
-    int64_t n, m;
-    int64_t *ei = NULL, *ej = NULL;
-    double *w = NULL;
-    int64_t edge_count = 0;
-    int64_t ss_count;
+    ss << read_file;
+    free(read_file);
 
-    while(getline(rptr, newline))
-    {
-        ss.clear();
-        ss << newline;
-        /*check format of each line*/
-        while(ss >> temp)
+    int64_t n, m;
+    int64_t *ei, *ej;
+    double *w;
+
+    ss >> n;
+    ss >> n;
+    ss >> m;
+    ei = (int64_t *)malloc(sizeof(int64_t) * m);
+    ej = (int64_t *)malloc(sizeof(int64_t) * m);
+    w = (double *)malloc(sizeof(double) * m);
+    int64_t i;
+    for(i = 0; i < m; i ++) {
+        ss >> ei[i];
+        ss >> ej[i];
+        ss >> w[i];
+        // TODO validate input
+        if(ei[i] < 0 || ei[i] >= n || ej[i] < 0 || ej[i] >= n)
         {
-            ss_count ++;
-            if(ss_count > 3)
-            {
-                break;
-            }
-        }
-        /*skip empty line*/
-        if(ss_count == 0)
-        {
-            ss.clear();
-            continue;
-        }
-        /*wrong format*/
-        else if(ss_count != 3)
-        {
-            fprintf(stderr, "Invalid Input!\n");
-            rptr.close();
+            fprintf(stderr, "Invalid Input in Line %ld!\n", i + 2);
+            fclose(rptr);
+            free(ei);
+            free(ej);
+            free(w);
             return EXIT_FAILURE;
         }
-        else
+        // TODO check for negative weights
+        if(w[i] < 0)
         {
-            ss.clear();
-            ss << newline;
-            if(edge_count == 0)
-            {
-                ss >> n;
-                ss >> n;
-                ss >> m;
-                ei = (int64_t *)malloc(sizeof(int64_t) * m);
-                ej = (int64_t *)malloc(sizeof(int64_t) * m);
-                w = (double *)malloc(sizeof(double) * m);
-            }
-            else
-            {
-                /*check edge number*/
-                if(edge_count > m)
-                {
-                    fprintf(stderr, "Wrong Edge Number!\n");
-                    free(ei);
-                    free(ej);
-                    free(w);
-                    rptr.close();
-                    return EXIT_FAILURE;
-                }
-                ss >> ei[edge_count - 1];
-                ss >> ej[edge_count - 1];
-                ss >> w[edge_count - 1];
-                /*detect index error*/
-                if(ei[edge_count - 1] >= n || ej[edge_count - 1] >= n)
-                {
-                    fprintf(stderr, "Exceed Index in Line %ld!\n", edge_count + 1);
-                    rptr.close();
-                    return EXIT_FAILURE;
-                }
-                /*detect diagonal edges*/
-                if(ei[edge_count - 1] == ej[edge_count - 1])
-                {
-                    fprintf(stderr, "Diagonal Edges Found in Line %ld!\n", edge_count + 1);
-                    rptr.close();
-                    return EXIT_FAILURE;
-                }
-                /*detect negative weight*/
-                if(w[edge_count - 1] < 0)
-                {
-                    fprintf(stderr, "Negative Weights Found in Line %ld!\n", edge_count + 1);
-                    rptr.close();
-                    return EXIT_FAILURE;
-                }
-            }
-            edge_count ++;
-            ss_count = 0;
+            fprintf(stderr, "Negative Weight in Line %ld!\n", i + 2);
+            fclose(rptr);
+            free(ei);
+            free(ej);
+            free(w);
+            return EXIT_FAILURE;
         }
     }
+    fclose(rptr);
 
-    if((edge_count - 1) != m)
+    // TODO check for diagonal edges
+    if(check_diagonal(ei, ej, m))
     {
-        fprintf(stderr, "Wrong Edge Number!\n");
         free(ei);
         free(ej);
         free(w);
-        rptr.close();
         return EXIT_FAILURE;
     }
-    rptr.close();
 
-
-    HashMap *edge_table = new HashMap(2 * m);
-
-    /*detect repeated edges*/
-    for(int64_t i = 0; i < m; i ++)
+    int tmp1 = 2345;
+    int tmp2 = 6789;
+    char edge[128];
+    fill(edge, edge + 128, 0);
+    string converted_edge;
+    i = 0;
+    while(tmp1 != 0)
     {
-        if(edge_table->put(ei[i], ej[i]))
-        {
-            fprintf(stderr, "Reapted Edge in line %ld!\n", i + 2);
-            free(ei);
-            free(ej);
-            free(w);
-            delete edge_table;
-            return EXIT_FAILURE;
-        }
+        edge[i ++] = tmp1 % 10;
+        tmp1 /= 10;
     }
-
-    /*check symmetric*/
-    for(int64_t i = 0; i < m; i ++)
+    i = 0;
+    while(tmp2 != 0)
     {
-        if(edge_table->get(ej[i], ei[i]) == -1)
-        {
-            fprintf(stderr, "Symmetric Error!\n");
-            free(ei);
-            free(ej);
-            free(w);
-            delete edge_table;
-            return EXIT_FAILURE;
-        }
+        edge[64 + (i ++)] = tmp2 % 10;
+        tmp2 /= 10;
     }
-
-
-
-    // TODO check symmetric
-    // TODO check for diagonal edges
-    // TODO check for negative weights
-    // TODO validate input
+    unordered_set<string> *edges_set = new unordered_set<string>;
     // TODO check for repeated edges
+    if(check_repeated(ei, ej, m, edges_set))
+    {
+        delete edges_set;
+        free(ei);
+        free(ej);
+        free(w);
+        return EXIT_FAILURE;
+    }
+    // TODO check symmetric
+    if(check_symmetric(ei, ej, m, edges_set))
+    {
+        delete edges_set;
+        free(ei);
+        free(ej);
+        free(w);
+        return EXIT_FAILURE;
+    }
+    delete edges_set;
+
+
+
 
     fprintf(stderr, "loaded file %s : %12" PRId64 " nodes   %12" PRId64 " edges\n",
             argv[1], n, m);
 
     double ret;
-    size_t outputlen = n;
     int64_t *output = (int64_t *)malloc(sizeof(int64_t) * n);
+    size_t outputlen = n;
     ret = densest_subgraph(n, m, ei, ej, w, output, &outputlen);
     cout << ret << endl;
     cout << outputlen << endl;
