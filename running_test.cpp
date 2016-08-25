@@ -20,30 +20,22 @@ class Edge
         int64_t to;
 };
 
-string convert_edge(int64_t from, int64_t to)
+struct EdgeHash
 {
-    char temp[51];
-    fill(temp, temp + 50, '0');
-    int i = 0;
-    while(from != 0 || to != 0)
-    {
-        temp[i] = char(from % 10);
-        temp[i + 25] = char(to % 10);
-        i ++;
-        from /= 10;
-        to /= 10;
-    }
-    temp[50] = 0;
-    string converted(temp);
-    return converted;
-}
+	size_t operator()(const pair<int64_t, int64_t>& edge) const 
+	{
+		auto h1 = hash<int64_t>{}(edge.first);
+		auto h2 = hash<int64_t>{}(edge.second);
+		return h1 ^ h2;
+	}
+};
 
-int check_symmetric(int64_t *ei, int64_t *ej, int64_t m, unordered_set<string> *edges_set)
+int check_symmetric(int64_t *ei, int64_t *ej, int64_t m, unordered_set<pair<int64_t, int64_t>, EdgeHash> *edges_set)
 {
     int64_t i;
     for(i = 0; i < m; i ++)
     {
-        if(edges_set->find(convert_edge(ej[i], ei[i])) == edges_set->end())
+        if(edges_set->find(make_pair(ej[i], ei[i])) == edges_set->end())
         {
             fprintf(stderr, "Symmetric Error!\n");
             return FAIL;
@@ -52,17 +44,17 @@ int check_symmetric(int64_t *ei, int64_t *ej, int64_t m, unordered_set<string> *
     return PASS;
 }
 
-int check_repeated(int64_t *ei, int64_t *ej, int64_t m, unordered_set<string> *edges_set)
+int check_repeated(int64_t *ei, int64_t *ej, int64_t m, unordered_set<pair<int64_t, int64_t>, EdgeHash> *edges_set)
 {
     int64_t i;
     for(i = 0; i < m; i ++)
     {
-        if(edges_set->count(convert_edge(ei[i], ej[i])))
+        if(edges_set->count(make_pair(ei[i], ej[i])))
         {
             fprintf(stderr, "Repeated Edge in Line %ld!\n", i + 2);
             return FAIL;
         }
-        edges_set->insert(convert_edge(ei[i], ej[i]));
+        edges_set->insert(make_pair(ei[i], ej[i]));
     }
     return PASS;
 }
@@ -158,7 +150,7 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    unordered_set<string> *edges_set = new unordered_set<string>;
+    unordered_set<pair<int64_t, int64_t>, EdgeHash> *edges_set = new unordered_set<pair<int64_t, int64_t>, EdgeHash>;
     // TODO check for repeated edges
     if(check_repeated(ei, ej, m, edges_set))
     {
