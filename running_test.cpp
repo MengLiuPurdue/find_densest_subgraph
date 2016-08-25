@@ -22,12 +22,12 @@ class Edge
 
 struct EdgeHash
 {
-	size_t operator()(const pair<int64_t, int64_t>& edge) const 
-	{
-		auto h1 = hash<int64_t>{}(edge.first);
-		auto h2 = hash<int64_t>{}(edge.second);
-		return h1 ^ h2;
-	}
+    size_t operator()(const pair<int64_t, int64_t>& edge) const 
+    {
+        auto h1 = hash<int64_t>{}(edge.first);
+        auto h2 = hash<int64_t>{}(edge.second);
+        return h1 ^ h2;
+    }
 };
 
 int check_symmetric(int64_t *ei, int64_t *ej, int64_t m, unordered_set<pair<int64_t, int64_t>, EdgeHash> *edges_set)
