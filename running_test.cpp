@@ -4,59 +4,47 @@
 #include <sstream>
 #include <inttypes.h>
 #include <algorithm>
+#include <vector>
 #include <unordered_set>
 
 using namespace std;
 
 #include "def.h"
 
-#define PASS 0
-#define FAIL 1
+#define TRUE 0
+#define FALSE 1
 
-class Edge
+int check_symmetric(int64_t *ei, int64_t *ej, int64_t m, int64_t n)
 {
-    public:
-        int64_t from;
-        int64_t to;
-};
+    vector< unordered_set<int> > graph(n);
 
-struct EdgeHash
-{
-    size_t operator()(const pair<int64_t, int64_t>& edge) const 
-    {
-        auto h1 = hash<int64_t>{}(edge.first);
-        auto h2 = hash<int64_t>{}(edge.second);
-        return h1 ^ h2;
+    for (int64_t i = 0; i < m; i ++) {
+        graph[ei[i]].insert(ej[i]);
     }
-};
 
-int check_symmetric(int64_t *ei, int64_t *ej, int64_t m, unordered_set<pair<int64_t, int64_t>, EdgeHash> *edges_set)
-{
-    int64_t i;
-    for(i = 0; i < m; i ++)
-    {
-        if(edges_set->find(make_pair(ej[i], ei[i])) == edges_set->end())
-        {
-            fprintf(stderr, "Symmetric Error!\n");
-            return FAIL;
+    for (int64_t i = 0; i < m; i ++) {
+        if (graph[ej[i]].count(ei[i]) == 0) {
+            fprintf(stderr, "Symmetric Error in Line %ld\n!", i + 2);
+            return FALSE;
         }
     }
-    return PASS;
+
+    return TRUE;
 }
 
-int check_repeated(int64_t *ei, int64_t *ej, int64_t m, unordered_set<pair<int64_t, int64_t>, EdgeHash> *edges_set)
+int check_repeated(int64_t *ei, int64_t *ej, int64_t m, int64_t n)
 {
-    int64_t i;
-    for(i = 0; i < m; i ++)
-    {
-        if(edges_set->count(make_pair(ei[i], ej[i])))
-        {
-            fprintf(stderr, "Repeated Edge in Line %ld!\n", i + 2);
-            return FAIL;
+    vector< unordered_set<int> > graph(n);
+
+    for (int64_t i = 0; i < m; i ++) {
+        if (graph[ei[i]].count(ej[i]) != 0) {
+            fprintf(stderr, "Repeated Edges in Line %ld\n!", i + 2);
+            return FALSE;
         }
-        edges_set->insert(make_pair(ei[i], ej[i]));
+        graph[ei[i]].insert(ej[i]);
     }
-    return PASS;
+
+    return TRUE;
 }
 
 int check_diagonal(int64_t *ei, int64_t *ej, int64_t m)
@@ -66,11 +54,11 @@ int check_diagonal(int64_t *ei, int64_t *ej, int64_t m)
     {
         if(ei[i] == ej[i])
         {
-            fprintf(stderr, "Diagonal Edge in Line %ld!", i + 2);
-            return FAIL;
+            fprintf(stderr, "Diagonal Edge in Line %ld\n!", i + 2);
+            return FALSE;
         }
     }
-    return PASS;
+    return TRUE;
 }
 
 
@@ -150,26 +138,22 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    unordered_set<pair<int64_t, int64_t>, EdgeHash> *edges_set = new unordered_set<pair<int64_t, int64_t>, EdgeHash>;
     // TODO check for repeated edges
-    if(check_repeated(ei, ej, m, edges_set))
+    if(check_repeated(ei, ej, m, n))
     {
-        delete edges_set;
         free(ei);
         free(ej);
         free(w);
         return EXIT_FAILURE;
     }
     // TODO check symmetric
-    if(check_symmetric(ei, ej, m, edges_set))
+    if(check_symmetric(ei, ej, m, n))
     {
-        delete edges_set;
         free(ei);
         free(ej);
         free(w);
         return EXIT_FAILURE;
     }
-    delete edges_set;
 
 
 
