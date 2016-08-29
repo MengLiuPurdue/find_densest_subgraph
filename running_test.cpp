@@ -3,18 +3,72 @@
 #include <stdio.h>
 #include <sstream>
 #include <inttypes.h>
+#include <algorithm>
+#include <vector>
+#include <unordered_set>
 
 using namespace std;
 
 #include "def.h"
+
+#define TRUE 0
+#define FALSE 1
+
+int check_symmetric(int64_t *ei, int64_t *ej, int64_t m, int64_t n)
+{
+    vector< unordered_set<int> > graph(n);
+
+    for (int64_t i = 0; i < m; i ++) {
+        graph[ei[i]].insert(ej[i]);
+    }
+
+    for (int64_t i = 0; i < m; i ++) {
+        if (graph[ej[i]].count(ei[i]) == 0) {
+            fprintf(stderr, "Symmetric Error in Line %ld\n!", i + 2);
+            return FALSE;
+        }
+    }
+
+    return TRUE;
+}
+
+int check_repeated(int64_t *ei, int64_t *ej, int64_t m, int64_t n)
+{
+    vector< unordered_set<int> > graph(n);
+
+    for (int64_t i = 0; i < m; i ++) {
+        if (graph[ei[i]].count(ej[i]) != 0) {
+            fprintf(stderr, "Repeated Edges in Line %ld\n!", i + 2);
+            return FALSE;
+        }
+        graph[ei[i]].insert(ej[i]);
+    }
+
+    return TRUE;
+}
+
+int check_diagonal(int64_t *ei, int64_t *ej, int64_t m)
+{
+    int64_t i;
+    for(i = 0; i < m; i ++)
+    {
+        if(ei[i] == ej[i])
+        {
+            fprintf(stderr, "Diagonal Edge in Line %ld\n!", i + 2);
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
 
 int main(int argc, char* argv[])
 {
     FILE *rptr = fopen(argv[1], "r");
     if(rptr == NULL) {
         fprintf(stderr, 
-           "The file %s couldn't be opened for reading (Does it exist?)!\n", 
-           argv[1]);
+                "The file %s couldn't be opened for reading (Does it exist?)!\n", 
+                argv[1]);
         return EXIT_FAILURE;
     }
 
@@ -52,16 +106,60 @@ int main(int argc, char* argv[])
         ss >> ei[i];
         ss >> ej[i];
         ss >> w[i];
+        // TODO validate input
+        if(ei[i] < 0 || ei[i] >= n || ej[i] < 0 || ej[i] >= n)
+        {
+            fprintf(stderr, "Invalid Input in Line %ld!\n", i + 2);
+            fclose(rptr);
+            free(ei);
+            free(ej);
+            free(w);
+            return EXIT_FAILURE;
+        }
+        // TODO check for negative weights
+        if(w[i] < 0)
+        {
+            fprintf(stderr, "Negative Weight in Line %ld!\n", i + 2);
+            fclose(rptr);
+            free(ei);
+            free(ej);
+            free(w);
+            return EXIT_FAILURE;
+        }
     }
-    
-    // TODO check symmetric
+    fclose(rptr);
+
     // TODO check for diagonal edges
-    // TODO check for negative weights
-    // TODO validate input
+    if(check_diagonal(ei, ej, m))
+    {
+        free(ei);
+        free(ej);
+        free(w);
+        return EXIT_FAILURE;
+    }
+
     // TODO check for repeated edges
-    
+    if(check_repeated(ei, ej, m, n))
+    {
+        free(ei);
+        free(ej);
+        free(w);
+        return EXIT_FAILURE;
+    }
+    // TODO check symmetric
+    if(check_symmetric(ei, ej, m, n))
+    {
+        free(ei);
+        free(ej);
+        free(w);
+        return EXIT_FAILURE;
+    }
+
+
+
+
     fprintf(stderr, "loaded file %s : %12" PRId64 " nodes   %12" PRId64 " edges\n",
-        argv[1], n, m);
+            argv[1], n, m);
 
     double ret;
     int64_t *output = (int64_t *)malloc(sizeof(int64_t) * n);
@@ -72,6 +170,6 @@ int main(int argc, char* argv[])
     for (size_t j = 0; j < outputlen; ++j) {
         cout << output[j] << endl;
     }
-    
+
     return 0;
 }
