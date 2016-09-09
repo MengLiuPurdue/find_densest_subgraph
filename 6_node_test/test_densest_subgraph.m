@@ -15,5 +15,4 @@ for i=1:32767
         fprintf('error!\n');
         break;
     end
-    i
 end
