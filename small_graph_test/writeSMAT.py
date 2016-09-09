@@ -20,6 +20,7 @@ __author__ = """Pieter Swart (swart@lanl.gov)"""
 __all__ = ['graph_atlas_g']
 
 from networkx.generators.small import make_small_graph
+import sys
 
 def graph_atlas_g():
     """
@@ -12335,8 +12336,19 @@ def graph_atlas_g():
     return GAG
 
 GAG = graph_atlas_g()
-test=GAG[10].edges()
-print(test[0][0])
-file_object = open('python_test.txt','w')
-file_object.write('%d\n'%test[0][0])
-file_object.close()
+input_string = sys.argv[1]
+import string
+num = string.atoi(input_string, 10)
+edges = GAG[num].edges()
+if len(edges)==0:
+    print(0)
+    exit()
+else:
+    print(1)
+nodes = GAG[num].nodes()
+input_file = open('run_dsubgraph.smat','w')
+input_file.write('%d %d %d\n'%(len(nodes),len(nodes),2 * len(edges)))
+for i in range(len(edges)):
+    input_file.write('%d %d %d\n'%(edges[i][0], edges[i][1], 1))
+    input_file.write('%d %d %d\n'%(edges[i][1], edges[i][0], 1))
+input_file.close()
