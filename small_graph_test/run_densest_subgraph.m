@@ -2,7 +2,7 @@ mydir = fileparts(mfilename('fullpath'));
 mygfile = fullfile(mydir,'run_dsubgraph.smat');
 myoutfile = fullfile(mydir,'run-dsubgraph.out');
 
-for i=1:1253
+for i=0:1252
     [status, cmdout]=system(['python writeSMAT.py ',num2str(i)]);
     if cmdout(1)=='1'
         status = system(sprintf(...
