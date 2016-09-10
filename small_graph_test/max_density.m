@@ -1,3 +1,6 @@
+%find the subgraph with the maximum density in an undirected graph through brutal search
+%the undirected graph is represented by an adjcent matrix A
+%density is the maximum density and cut is the corresponding subgraph
 function [density,cut]=max_density(A)
 density=0;
 for i=0:63
