@@ -1,6 +1,6 @@
 function densest_subgraph(A, outfile)
 if ~issymmetric(A)
-    error('input is not symmetric\n');
+    error('input is not symmetric');
 end
 [ei,ej,w] = find(A);
 n = max(ei);
@@ -9,10 +9,10 @@ ei = ei - 1;
 ej = ej - 1;
 for i = 1:m
     if ei(i)<0 || ej(i)<0 || ei(i)>=n || ej(i)>=n
-        error('invalid input in line %d\n', i);
+        error('invalid input in line %d', i);
     end
     if w(i)<0
-        error('negative weight in line %d\n', i);
+        error('negative weight in line %d', i);
     end
 end
 output = zeros(n,1);
